@@ -1,36 +1,302 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   DPWH 360° design tokens
+   Navy from the DPWH gear, signal orange from the logo pillars.
+   Flag colors are reserved for the automatic flag meaning only.
+   --------------------------------------------------------------------------- */
 @theme {
-  --color-dpwh-blue: #1e3a8a;
-  --color-dpwh-blue-light: #2563eb;
-  --color-dpwh-orange: #f97316;
+  --font-sans: "Barlow", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Barlow Condensed", "Barlow", ui-sans-serif, system-ui, sans-serif;
+
+  --color-navy-950: #0b1438;
+  --color-navy-900: #111d55;
+  --color-navy-800: #1a2878;
+  --color-navy-700: #24359a;
+  --color-navy-600: #2f45b5;
+  --color-navy-200: #c7cfee;
+  --color-navy-100: #e3e7f6;
+  --color-navy-50: #f1f3fb;
+
+  --color-signal-600: #e2491d;
+  --color-signal-500: #f05a28;
+  --color-signal-100: #fde6dc;
+
+  --color-canvas: #f3f5f9;
+  --color-line: #dfe3ec;
+  --color-line-soft: #ebeef4;
+  --color-ink: #141c33;
+  --color-ink-2: #48526b;
+  --color-ink-3: #66708a;
+
+  --color-flag-green: #1e8e4f;
+  --color-flag-green-ink: #146c3a;
+  --color-flag-green-soft: #e3f4ea;
+  --color-flag-yellow: #d99a0b;
+  --color-flag-yellow-ink: #855a00;
+  --color-flag-yellow-soft: #fdf3d8;
+  --color-flag-red: #c62f2a;
+  --color-flag-red-ink: #a3221e;
+  --color-flag-red-soft: #fbe5e3;
+
+  /* Kept for components written before the redesign. */
+  --color-dpwh-blue: #1a2878;
+  --color-dpwh-blue-light: #2f45b5;
+  --color-dpwh-orange: #e2491d;
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-navy-600);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-navy-100);
+  }
+  /* Edge/IE draw their own password-reveal and clear buttons inside inputs. The
+     portal has its own show/hide button (PasswordInput), so hide the browser's
+     to avoid two eye icons. */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+}
+
+/* Customizable select (Chromium 135+): style the open option list too. Browsers
+   without support keep the native list; the closed control looks the same. */
+@supports (appearance: base-select) {
+  select.input,
+  select.input::picker(select) {
+    appearance: base-select;
+  }
+  select.input::picker-icon {
+    display: none; /* the chevron is the background image above */
+  }
+  select.input::picker(select) {
+    margin-block: 6px;
+    padding: 4px;
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 16px 40px -12px rgb(11 20 56 / 0.3);
+    opacity: 1;
+    transition: opacity 140ms ease-out, translate 140ms ease-out, display 140ms allow-discrete, overlay 140ms allow-discrete;
+  }
+  @starting-style {
+    select.input:open::picker(select) {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+  }
+  select.input option {
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: background-color 100ms;
+  }
+  select.input option:hover,
+  select.input option:focus-visible {
+    background: var(--color-navy-50);
+    outline: none;
+  }
+  select.input option:checked {
+    background: var(--color-navy-50);
+    color: var(--color-navy-800);
+    font-weight: 600;
+  }
+  select.input option::checkmark {
+    color: var(--color-navy-700);
+  }
 }
 
 @layer components {
+  /* Form controls ---------------------------------------------------------- */
   .input {
-    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
-      focus:border-dpwh-blue-light focus:outline-none focus:ring-2 focus:ring-blue-200
-      disabled:bg-slate-100 disabled:text-slate-500;
+    @apply w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink shadow-[inset_0_1px_0_rgb(20_28_51/0.03)]
+      transition-[border-color,box-shadow] duration-150 placeholder:text-ink-3/80
+      hover:border-navy-200
+      focus:border-navy-600 focus:outline-none focus:ring-3 focus:ring-navy-100
+      disabled:cursor-not-allowed disabled:bg-canvas disabled:text-ink-3;
   }
   .input-error {
-    @apply border-red-500 focus:border-red-500 focus:ring-red-200;
+    @apply border-flag-red hover:border-flag-red focus:border-flag-red focus:ring-flag-red-soft;
+  }
+
+  /* Selects: one look everywhere (every <select> in the app uses .input).
+     Native control underneath, so keyboard use and form validation are unchanged. */
+  select.input {
+    @apply cursor-pointer appearance-none bg-no-repeat pr-10 font-medium;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2366708a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-size: 1rem 1rem;
+  }
+  select.input:hover:not(:disabled),
+  select.input:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2324359a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+  select.input:disabled {
+    @apply cursor-not-allowed;
+  }
+  select.input option {
+    @apply bg-white font-medium text-ink;
   }
   .label {
-    @apply mb-1 block text-sm font-medium text-slate-700;
+    @apply mb-1.5 block text-sm font-medium text-ink-2;
   }
+  .field-error {
+    @apply mt-1.5 text-xs font-medium text-flag-red-ink;
+  }
+  .field-hint {
+    @apply mt-1.5 text-xs text-ink-3;
+  }
+
+  /* Buttons --------------------------------------------------------------- */
   .btn-primary,
   .btn-secondary,
-  .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium
-      transition disabled:cursor-not-allowed disabled:opacity-60;
+  .btn-danger,
+  .btn-ghost,
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold whitespace-nowrap
+      transition-[background-color,border-color,color,box-shadow,transform] duration-150
+      active:translate-y-px disabled:pointer-events-none disabled:opacity-55;
   }
   .btn-primary {
-    @apply bg-dpwh-blue text-white hover:bg-dpwh-blue-light;
+    @apply bg-navy-800 text-white shadow-[0_1px_0_rgb(11_20_56/0.25)] hover:bg-navy-700;
   }
   .btn-secondary {
-    @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+    @apply border border-line bg-white text-ink hover:border-navy-200 hover:bg-navy-50;
   }
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700;
+    @apply bg-flag-red text-white hover:bg-flag-red-ink;
+  }
+  .btn-success {
+    @apply bg-flag-green text-white hover:bg-flag-green-ink;
+  }
+  .btn-ghost {
+    @apply px-2.5 text-ink-2 hover:bg-navy-50 hover:text-navy-800;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-[13px];
+  }
+  .link {
+    @apply font-medium text-navy-700 underline-offset-2 hover:text-navy-600 hover:underline;
+  }
+
+  /* Surfaces -------------------------------------------------------------- */
+  .panel {
+    /* min-w-0: panels are grid items; let truncated text shrink instead of widening the column */
+    @apply min-w-0 rounded-xl border border-line bg-white;
+  }
+  .panel-header {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-line-soft px-5 py-3.5;
+  }
+  .panel-title {
+    @apply font-display text-lg font-semibold tracking-[0.01em] text-ink;
+  }
+
+  /* Tables ---------------------------------------------------------------- */
+  .data-table {
+    @apply min-w-full text-sm;
+  }
+  .data-table thead th {
+    @apply sticky top-0 border-b border-line bg-[#f7f8fb] px-3 py-2.5 text-left text-[13px] font-semibold whitespace-nowrap text-ink-2;
+  }
+  .data-table tbody td {
+    @apply border-b border-line-soft px-3 py-3 align-top;
+  }
+  .data-table th:first-child,
+  .data-table td:first-child {
+    @apply pl-4;
+  }
+  .data-table th:last-child,
+  .data-table td:last-child {
+    @apply pr-4;
+  }
+  .data-table tbody tr {
+    @apply transition-colors duration-100 hover:bg-navy-50/60;
+  }
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Loading skeleton ------------------------------------------------------ */
+  .skeleton {
+    @apply rounded-md bg-line-soft;
+    background-image: linear-gradient(90deg, transparent 0, rgb(255 255 255 / 0.7) 50%, transparent 100%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Motion. One entrance per page, plus motion that answers an action.
+   --------------------------------------------------------------------------- */
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* fill-mode backwards: no transform lingers afterwards, so fixed-position
+   overlays inside the page are never trapped in a containing block. */
+.animate-page { animation: page-in 260ms var(--ease-out-quart) backwards; }
+.animate-toast { animation: toast-in 220ms var(--ease-out-quart) both; }
+.animate-bar {
+  transform-origin: left center;
+  animation: bar-grow 700ms var(--ease-out-quart) both;
+}
+
+/* Dashboard entrance: children rise in once, in order. */
+.stagger > * { animation: rise-in 420ms var(--ease-out-quart) backwards; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 180ms; }
+.stagger > *:nth-child(5) { animation-delay: 240ms; }
+.stagger > *:nth-child(n + 6) { animation-delay: 300ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

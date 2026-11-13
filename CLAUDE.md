@@ -17,6 +17,7 @@ Full concept: `docs/SYSTEM_CONCEPT.md` (read it when a task touches a module not
 - **Stack:** React + Vite + Tailwind, Express API, Supabase (Postgres, Auth, Storage, RLS), OpenStreetMap, Pannellum, Chart.js.
 - **Team:** Goco (leader, back-end, server setup), Julina (back-end API), Tracy (front-end: login, project pages), Jonalyn (front-end: register, contractor and agency pages).
 - **Week 1 is done:** auth, roles, the projects/contractors/agencies API, Login/Register/Pending, the project form and list, and the contractor and agency pages. Later modules (phases and progress, 360° upload and viewer, map, flags and audit, finance, reports, dashboard) are still to be built on top of the existing database views and RPCs.
+- **Since Week 1:** role dashboards for all four roles, the audit queue, and administrator User Management (`GET /api/users`, `PATCH /api/users/:id/access` → `admin_set_user_access`, see `server/README.md`). Modules without an API yet show a "not available yet" page; never fill them with sample data.
 - Automatic flags are a monitoring aid. They don't replace engineering inspection or a formal audit, so UI text must not claim otherwise.
 
 ## Layout (monorepo, npm workspaces)

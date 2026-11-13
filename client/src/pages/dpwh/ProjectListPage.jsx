@@ -1,21 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import {
   formatDate, formatPeso, labelOf, PROJECT_STATUSES, PROJECT_TYPES,
 } from '../../lib/format.js';
 import Alert from '../../components/common/Alert.jsx';
-
-const STATUS_BADGE = {
-  active: 'bg-green-100 text-green-800',
-  suspended: 'bg-amber-100 text-amber-800',
-  cancelled: 'bg-slate-200 text-slate-700',
-};
+import PageHeader from '../../components/ui/PageHeader.jsx';
+import Icon from '../../components/ui/Icon.jsx';
+import EmptyState from '../../components/ui/EmptyState.jsx';
+import Pagination, { usePagination } from '../../components/ui/Pagination.jsx';
+import { SkeletonRows } from '../../components/ui/Skeleton.jsx';
+import { FlagBadge, ProgressBar, StatusBadge } from '../../components/ui/Badges.jsx';
 
 const EMPTY_FILTERS = { municipality_id: '', project_type: '', status: '', search: '' };
 
 export default function ProjectListPage() {
-  const location = useLocation();
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [search, setSearch] = useState(''); // debounced copy of filters.search
   const [municipalities, setMunicipalities] = useState([]);
@@ -23,7 +22,6 @@ export default function ProjectListPage() {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const flash = location.state?.flash;
 
   // Municipality options for the filter.
   useEffect(() => {
@@ -67,120 +65,143 @@ export default function ProjectListPage() {
 
   const setFilter = (name) => (event) => setFilters((f) => ({ ...f, [name]: event.target.value }));
   const hasFilters = Object.values(filters).some(Boolean);
+  const paging = usePagination(projects, 15, [filters.municipality_id, filters.project_type, filters.status, search]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Projects</h1>
-          <p className="text-sm text-slate-600">Infrastructure projects in Occidental Mindoro</p>
-        </div>
-        <Link to="/dpwh/projects/new" className="btn-primary">+ Register project</Link>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Projects"
+        description="Infrastructure projects in Occidental Mindoro"
+        actions={(
+          <Link to="/dpwh/projects/new" className="btn-primary">
+            <Icon name="plus" className="h-4 w-4" />
+            Register project
+          </Link>
+        )}
+      />
 
-      {flash && <Alert type="success">{flash}</Alert>}
-
-      {/* Filters */}
-      <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <label htmlFor="search" className="label">Search</label>
-          <input
-            id="search"
-            type="search"
-            className="input"
-            placeholder="Project name or code"
-            value={filters.search}
-            onChange={setFilter('search')}
-          />
-        </div>
-        <div>
-          <label htmlFor="municipality" className="label">Municipality</label>
-          <select id="municipality" className="input" value={filters.municipality_id} onChange={setFilter('municipality_id')}>
-            <option value="">All municipalities</option>
-            {municipalities.map((m) => <option key={m.municipality_id} value={m.municipality_id}>{m.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="type" className="label">Type</label>
-          <select id="type" className="input" value={filters.project_type} onChange={setFilter('project_type')}>
-            <option value="">All types</option>
-            {PROJECT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="status" className="label">Status</label>
-          <select id="status" className="input" value={filters.status} onChange={setFilter('status')}>
-            <option value="">All statuses</option>
-            {PROJECT_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {error && <Alert type="error">{error}</Alert>}
-
-      <div className="flex items-center justify-between text-sm text-slate-600">
-        <span>{loading ? 'Loading…' : `${count} project${count === 1 ? '' : 's'}`}</span>
-        {hasFilters && (
-          <button type="button" className="text-dpwh-blue-light hover:underline" onClick={() => setFilters(EMPTY_FILTERS)}>
+      <section className="panel overflow-hidden">
+        {/* Filters */}
+        <div className="grid gap-3 border-b border-line-soft p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto] lg:items-end">
+          <div>
+            <label htmlFor="search" className="label">Search</label>
+            <div className="relative">
+              <Icon name="search" className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-ink-3" />
+              <input
+                id="search"
+                type="search"
+                className="input pl-9"
+                placeholder="Project name or code"
+                value={filters.search}
+                onChange={setFilter('search')}
+              />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="municipality" className="label">Municipality</label>
+            <select id="municipality" className="input" value={filters.municipality_id} onChange={setFilter('municipality_id')}>
+              <option value="">All municipalities</option>
+              {municipalities.map((m) => <option key={m.municipality_id} value={m.municipality_id}>{m.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="type" className="label">Type</label>
+            <select id="type" className="input" value={filters.project_type} onChange={setFilter('project_type')}>
+              <option value="">All types</option>
+              {PROJECT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="status" className="label">Status</label>
+            <select id="status" className="input" value={filters.status} onChange={setFilter('status')}>
+              <option value="">All statuses</option>
+              {PROJECT_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </div>
+          <button type="button" className="btn-ghost justify-self-start" onClick={() => setFilters(EMPTY_FILTERS)} disabled={!hasFilters}>
             Clear filters
           </button>
-        )}
-      </div>
+        </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-            <tr>
-              <th className="px-3 py-3">Code</th>
-              <th className="px-3 py-3">Project name</th>
-              <th className="px-3 py-3">Type</th>
-              <th className="px-3 py-3">Municipality</th>
-              <th className="px-3 py-3">Agency</th>
-              <th className="px-3 py-3">Contractor</th>
-              <th className="px-3 py-3 text-right">Approved budget</th>
-              <th className="px-3 py-3 text-right">Contract amount</th>
-              <th className="px-3 py-3 text-right">Duration</th>
-              <th className="px-3 py-3">NTP</th>
-              <th className="px-3 py-3">Target completion</th>
-              <th className="px-3 py-3">Status</th>
-              <th className="px-3 py-3"><span className="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {!loading && !error && projects.length === 0 && (
+        {error && <div className="border-b border-line-soft p-4"><Alert type="error">{error}</Alert></div>}
+
+        <div className="flex items-center justify-between px-4 py-2.5 text-sm text-ink-3">
+          <span className="tabular">
+            {loading ? 'Loading…' : `${count} project${count === 1 ? '' : 's'}${count > projects.length ? `, showing the latest ${projects.length}` : ''}`}
+          </span>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto border-t border-line-soft">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={13} className="px-3 py-10 text-center text-slate-500">
-                  {hasFilters ? 'No projects match these filters.' : 'No projects yet. Register the first one.'}
-                </td>
+                <th>Project</th>
+                <th>Agency and contractor</th>
+                <th className="text-right">Budget</th>
+                <th>Schedule</th>
+                <th>Progress</th>
+                <th>Flag and status</th>
+                <th><span className="sr-only">Actions</span></th>
               </tr>
-            )}
-            {projects.map((p) => (
-              <tr key={p.project_id} className="hover:bg-slate-50">
-                <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{p.project_code}</td>
-                <td className="min-w-[14rem] px-3 py-2 font-medium text-slate-900">{p.name}</td>
-                <td className="whitespace-nowrap px-3 py-2">{labelOf(PROJECT_TYPES, p.project_type)}</td>
-                <td className="whitespace-nowrap px-3 py-2">{p.municipality}{p.barangay ? `, ${p.barangay}` : ''}</td>
-                <td className="px-3 py-2">{p.agency_acronym || p.agency_name}</td>
-                <td className="px-3 py-2">{p.contractor_name || <span className="text-slate-400">—</span>}</td>
-                <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{formatPeso(p.approved_budget)}</td>
-                <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{formatPeso(p.contract_amount)}</td>
-                <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{p.duration_days} days</td>
-                <td className="whitespace-nowrap px-3 py-2">{formatDate(p.notice_to_proceed)}</td>
-                <td className="whitespace-nowrap px-3 py-2">{formatDate(p.target_completion_date)}</td>
-                <td className="px-3 py-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[p.status] || ''}`}>
-                    {labelOf(PROJECT_STATUSES, p.status)}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <Link to={`/dpwh/projects/${p.project_id}/edit`} className="text-dpwh-blue-light hover:underline">Edit</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {loading && <SkeletonRows rows={6} columns={7} />}
+              {!loading && !error && projects.length === 0 && (
+                <tr className="hover:bg-transparent">
+                  <td colSpan={7}>
+                    <EmptyState
+                      icon="folder"
+                      title={hasFilters ? 'No projects match these filters' : 'No projects yet'}
+                      compact
+                      action={hasFilters
+                        ? <button type="button" className="btn-secondary btn-sm" onClick={() => setFilters(EMPTY_FILTERS)}>Clear filters</button>
+                        : <Link to="/dpwh/projects/new" className="btn-primary btn-sm"><Icon name="plus" className="h-4 w-4" />Register the first project</Link>}
+                    />
+                  </td>
+                </tr>
+              )}
+              {!loading && paging.pageItems.map((p) => (
+                <tr key={p.project_id}>
+                  <td className="min-w-[15rem]">
+                    <span className="block font-semibold text-ink">{p.name}</span>
+                    <span className="tabular block text-xs text-ink-3">{p.project_code}, {labelOf(PROJECT_TYPES, p.project_type)}</span>
+                    <span className="mt-1 flex items-center gap-1 text-xs text-ink-2">
+                      <Icon name="mapPin" className="h-3.5 w-3.5 text-ink-3" />
+                      {p.barangay ? `${p.barangay}, ` : ''}{p.municipality}
+                    </span>
+                  </td>
+                  <td className="min-w-[10rem]">
+                    <span className="block">{p.agency_acronym || p.agency_name}</span>
+                    <span className="block text-xs text-ink-3">{p.contractor_name || 'No contractor yet'}</span>
+                  </td>
+                  <td className="tabular whitespace-nowrap text-right">
+                    <span className="block font-semibold text-ink">{formatPeso(p.approved_budget)}</span>
+                    <span className="block text-xs text-ink-3">Contract {formatPeso(p.contract_amount)}</span>
+                  </td>
+                  <td className="whitespace-nowrap">
+                    <span className="block">{formatDate(p.notice_to_proceed)}</span>
+                    <span className="tabular block text-xs text-ink-3">to {formatDate(p.target_completion_date)}, {p.duration_days} days</span>
+                  </td>
+                  <td><ProgressBar value={p.overall_progress} planned={p.planned_progress} /></td>
+                  <td>
+                    <span className="flex flex-col items-start gap-1.5">
+                      <FlagBadge project={p} />
+                      <StatusBadge status={p.status} />
+                    </span>
+                  </td>
+                  <td className="text-right">
+                    <Link to={`/dpwh/projects/${p.project_id}/edit`} className="btn-ghost btn-sm" aria-label={`Edit ${p.name}`}>
+                      <Icon name="pencil" className="h-4 w-4" />Edit
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {!loading && <Pagination {...paging} onChange={paging.setPage} label="projects" />}
+      </section>
     </div>
   );
 }

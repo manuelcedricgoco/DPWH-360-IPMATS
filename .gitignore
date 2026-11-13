@@ -25,6 +25,10 @@ supabase/.branches/
 CLAUDE.local.md
 .claude/settings.local.json
 
+# Skills installer working copy (npx skills). The shared copy of each skill is
+# committed under .claude/skills/, which is the folder Claude Code reads.
+.agents/
+
 # Logs and OS files
 *.log
 .DS_Store

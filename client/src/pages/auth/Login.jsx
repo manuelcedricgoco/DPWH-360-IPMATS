@@ -5,6 +5,10 @@ import { homeFor } from '../../lib/roles.js';
 import { ApiError } from '../../lib/api.js';
 import Alert from '../../components/common/Alert.jsx';
 import LoadingScreen from '../../components/common/LoadingScreen.jsx';
+import AuthShell from '../../components/auth/AuthShell.jsx';
+import PasswordInput from '../../components/auth/PasswordInput.jsx';
+import ConfirmDialog from '../../components/ui/ConfirmDialog.jsx';
+import Icon from '../../components/ui/Icon.jsx';
 
 // Supabase Auth messages → clear text for users.
 function friendlyAuthError(error) {
@@ -24,6 +28,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   // Already signed in → go to the right page.
   if (!submitting && loading) return <LoadingScreen />;
@@ -58,55 +63,73 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-dpwh-blue to-blue-700 px-4 py-10">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-dpwh-blue">DPWH 360°</h1>
-          <p className="mt-1 text-sm text-slate-600">Infrastructure Project Monitoring and Transparency System</p>
-          <p className="text-xs text-slate-500">Occidental Mindoro</p>
-        </div>
+    <AuthShell>
+      <h2 className="font-display text-[1.75rem] leading-tight font-semibold text-ink">Sign in</h2>
+      <p className="mt-1 text-sm text-ink-2">Use the email and password of your DPWH 360° account.</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {error && <Alert type="error">{error}</Alert>}
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+        {error && <Alert type="error">{error}</Alert>}
 
-          <div>
-            <label htmlFor="email" className="label">Email</label>
+        <div>
+          <label htmlFor="email" className="label">Email</label>
+          <div className="relative">
+            <Icon name="mail" className="pointer-events-none absolute top-1/2 left-3 h-[18px] w-[18px] -translate-y-1/2 text-ink-3" />
             <input
               id="email"
               type="email"
               autoComplete="email"
-              className="input"
+              className="input pl-10"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={submitting}
               required
             />
           </div>
+        </div>
 
-          <div>
-            <label htmlFor="password" className="label">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={submitting}
-              required
-            />
+        <div>
+          <div className="mb-1.5 flex items-baseline justify-between gap-3">
+            <label htmlFor="password" className="text-sm font-medium text-ink-2">Password</label>
+            <button type="button" className="text-sm font-medium text-navy-700 hover:text-navy-600 hover:underline" onClick={() => setForgotOpen(true)}>
+              Forgot password?
+            </button>
           </div>
+          <PasswordInput
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={submitting}
+            required
+          />
+        </div>
 
-          <button type="submit" className="btn-primary w-full" disabled={submitting}>
-            {submitting ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+        <button type="submit" className="btn-primary w-full py-2.5 text-[15px]" disabled={submitting}>
+          {submitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
+          {submitting ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
-          No account yet?{' '}
-          <Link to="/register" className="font-medium text-dpwh-blue-light hover:underline">Register</Link>
-        </p>
+      <div className="mt-6 border-t border-line-soft pt-5 text-center text-sm text-ink-2">
+        No account yet?{' '}
+        <Link to="/register" className="link">Create an account</Link>
       </div>
-    </div>
+
+      <ConfirmDialog
+        open={forgotOpen}
+        title="Reset your password"
+        icon="lock"
+        confirmLabel="Close"
+        cancelLabel={null}
+        onConfirm={() => setForgotOpen(false)}
+        onCancel={() => setForgotOpen(false)}
+      >
+        <p>
+          Self-service password reset is not available in this portal yet. Ask the system administrator of
+          the DPWH Occidental Mindoro office to help you regain access to your account.
+        </p>
+      </ConfirmDialog>
+    </AuthShell>
   );
 }
