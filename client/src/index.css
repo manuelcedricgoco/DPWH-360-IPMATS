@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dpwh-blue: #1e3a8a;
+  --color-dpwh-blue-light: #2563eb;
+  --color-dpwh-orange: #f97316;
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+      focus:border-dpwh-blue-light focus:outline-none focus:ring-2 focus:ring-blue-200
+      disabled:bg-slate-100 disabled:text-slate-500;
+  }
+  .input-error {
+    @apply border-red-500 focus:border-red-500 focus:ring-red-200;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-slate-700;
+  }
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium
+      transition disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply bg-dpwh-blue text-white hover:bg-dpwh-blue-light;
+  }
+  .btn-secondary {
+    @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+}
