@@ -1,6 +1,6 @@
 # DPWH 360° IPMATS – rules for Claude Code
 
-DPWH 360° Infrastructure Project Monitoring and Transparency System (Occidental Mindoro).
+DEVELOPMENT OF A WEB-BASED DPWH 360°  INFRASTRUCTURE PROJECT MONITORING  AND TRANSPARENCY  SYSTEM WITH GIS MAPPING, FINANCIAL TRACKING, AND AUTOMATED PROJECT FLAGGING
 
 ## Layout (monorepo, npm workspaces)
 - `server/` – Node.js + Express (ES modules), port **4000**, all routes under **`/api`**.
