@@ -3,6 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { computeTargetDate, formatDate, formatPeso, PROJECT_STATUSES, PROJECT_TYPES } from '../../lib/format.js';
 import Alert from '../../components/common/Alert.jsx';
+import PageHeader from '../../components/ui/PageHeader.jsx';
+import Skeleton from '../../components/ui/Skeleton.jsx';
+import Icon from '../../components/ui/Icon.jsx';
+import { useToast } from '../../context/ToastContext.jsx';
 
 // Occidental Mindoro bounds (same as the database check constraints).
 const LAT_MIN = 12.1;
@@ -104,13 +108,13 @@ function Field({ id, label, required, error, hint, children }) {
   return (
     <div>
       <label htmlFor={id} className="label">
-        {label} {required && <span className="text-red-600">*</span>}
+        {label} {required && <span className="text-flag-red" aria-hidden="true">*</span>}
       </label>
       {children}
       {error ? (
-        <p id={`${id}-error`} className="mt-1 text-xs text-red-600">{error}</p>
+        <p id={`${id}-error`} className="field-error">{error}</p>
       ) : hint ? (
-        <p className="mt-1 text-xs text-slate-500">{hint}</p>
+        <p className="field-hint">{hint}</p>
       ) : null}
     </div>
   );
@@ -120,6 +124,7 @@ export default function ProjectFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -207,9 +212,8 @@ export default function ProjectFormPage() {
       const { data } = isEdit
         ? await api(`/projects/${id}`, { method: 'PATCH', body })
         : await api('/projects', { method: 'POST', body });
-      navigate('/dpwh/projects', {
-        state: { flash: `Project ${data?.project_code || body.project_code} was ${isEdit ? 'updated' : 'registered'}.` },
-      });
+      toast.success(`Project ${data?.project_code || body.project_code} was ${isEdit ? 'updated' : 'registered'}.`);
+      navigate('/dpwh/projects');
     } catch (err) {
       setServerError({ message: err.message, list: err.errors || [] });
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -221,30 +225,46 @@ export default function ProjectFormPage() {
   const inputClass = (name) => `input ${fieldErrors[name] ? 'input-error' : ''}`;
   const aria = (name) => (fieldErrors[name] ? { 'aria-invalid': true, 'aria-describedby': `${name}-error` } : {});
 
-  if (loading) return <p className="text-sm text-slate-600">Loading…</p>;
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-6" aria-busy="true">
+        <Skeleton className="h-9 w-64" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="panel space-y-4 p-6">
+            <Skeleton className="h-5 w-48" />
+            <div className="grid gap-4 sm:grid-cols-2"><Skeleton className="h-10" /><Skeleton className="h-10" /></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   if (loadError) {
     return (
       <div className="max-w-xl space-y-4">
         <Alert type="error">{loadError}</Alert>
-        <Link to="/dpwh/projects" className="btn-secondary">Back to projects</Link>
+        <Link to="/dpwh/projects" className="btn-secondary"><Icon name="arrowLeft" className="h-4 w-4" />Back to projects</Link>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      <div>
-        <Link to="/dpwh/projects" className="text-sm text-dpwh-blue-light hover:underline">← Back to projects</Link>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900">{isEdit ? 'Edit project' : 'Register project'}</h1>
-        <p className="text-sm text-slate-600">Fields marked <span className="text-red-600">*</span> are required.</p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        back={{ to: '/dpwh/projects', label: 'Back to projects' }}
+        title={isEdit ? 'Edit project' : 'Register project'}
+        description={isEdit
+          ? 'Progress, flags and completion are computed by the system and cannot be edited here.'
+          : 'Phases are created automatically from the project type once the project is registered.'}
+      >
+        <p className="mt-1 text-sm text-ink-3">Fields marked <span className="text-flag-red">*</span> are required.</p>
+      </PageHeader>
 
       {serverError.message && <Alert type="error" messages={serverError.list}>{serverError.message}</Alert>}
 
       <form onSubmit={handleSubmit} noValidate className="space-y-6">
         {/* Identification */}
-        <section className="rounded-lg border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold text-slate-800">Project identification</h2>
+        <section className="panel p-5 sm:p-6">
+          <h2 className="panel-title mb-4">Project identification</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="project_code" label="Project code (DPWH ID)" required error={fieldErrors.project_code}>
               <input id="project_code" className={inputClass('project_code')} value={form.project_code} onChange={update('project_code')} maxLength={50} {...aria('project_code')} />
@@ -277,8 +297,8 @@ export default function ProjectFormPage() {
         </section>
 
         {/* Agency and contractor */}
-        <section className="rounded-lg border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold text-slate-800">Agency and contractor</h2>
+        <section className="panel p-5 sm:p-6">
+          <h2 className="panel-title mb-4">Agency and contractor</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="agency_id" label="Implementing agency" required error={fieldErrors.agency_id}>
               <select id="agency_id" className={inputClass('agency_id')} value={form.agency_id} onChange={update('agency_id')} {...aria('agency_id')}>
@@ -304,8 +324,8 @@ export default function ProjectFormPage() {
         </section>
 
         {/* Budget */}
-        <section className="rounded-lg border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold text-slate-800">Budget</h2>
+        <section className="panel p-5 sm:p-6">
+          <h2 className="panel-title mb-4">Budget</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="approved_budget" label="Approved budget (₱)" required error={fieldErrors.approved_budget}
               hint={form.approved_budget ? formatPeso(form.approved_budget) : undefined}>
@@ -321,8 +341,8 @@ export default function ProjectFormPage() {
         </section>
 
         {/* Location */}
-        <section className="rounded-lg border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold text-slate-800">Location</h2>
+        <section className="panel p-5 sm:p-6">
+          <h2 className="panel-title mb-4">Location</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="municipality_id" label="Municipality" required error={fieldErrors.municipality_id}>
               <select id="municipality_id" className={inputClass('municipality_id')} value={form.municipality_id} onChange={update('municipality_id')} {...aria('municipality_id')}>
@@ -348,8 +368,8 @@ export default function ProjectFormPage() {
         </section>
 
         {/* Schedule */}
-        <section className="rounded-lg border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold text-slate-800">Schedule</h2>
+        <section className="panel p-5 sm:p-6">
+          <h2 className="panel-title mb-4">Schedule</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field id="notice_to_proceed" label="Notice to proceed (NTP)">
               <input id="notice_to_proceed" type="date" className="input" value={form.notice_to_proceed} onChange={update('notice_to_proceed')} />
@@ -365,9 +385,12 @@ export default function ProjectFormPage() {
           </div>
         </section>
 
-        <div className="flex flex-wrap justify-end gap-3">
+        <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap justify-end gap-3 border-t border-line bg-white/90 px-4 py-3 backdrop-blur-md sm:mx-0 sm:rounded-xl sm:border">
           <Link to="/dpwh/projects" className="btn-secondary">Cancel</Link>
           <button type="submit" className="btn-primary" disabled={saving}>
+            {saving
+              ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />
+              : <Icon name={isEdit ? 'check' : 'plus'} className="h-4 w-4" />}
             {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Register project'}
           </button>
         </div>
