@@ -62,6 +62,21 @@ In PowerShell, use `curl.exe` instead of `curl`. Plain `curl` is an alias for `I
 | GET | `/api/agencies`, `/api/agencies/:id` | any approved user |
 | POST, PATCH, DELETE | `/api/agencies`, `/api/agencies/:id` | administrator |
 | GET | `/api/lookups/municipalities`, `/api/lookups/barangays?municipality_id=` | anyone, no token needed |
+| GET | `/api/users` `?search=&role=&status=pending\|approved\|rejected&account=active\|inactive&limit=&offset=` | administrator |
+| PATCH | `/api/users/:id/access` body `{ role?, is_approved?, is_active?, agency_id? }` | administrator |
+
+### User management
+- `GET /api/users` returns `{ data, count, limit, offset, summary }`. `summary` has the overview counts
+  (`total`, `pending`, `approved`, `rejected`, `active`, `inactive`) across all accounts.
+  Approval status comes from the profile columns: **pending** = not approved and a role is requested,
+  **approved** = approved, **rejected** = not approved and no request left.
+- `PATCH /api/users/:id/access` calls the existing `admin_set_user_access()` RPC with the administrator's own
+  token, so the RPC's admin check and the activity-log trigger on `profiles` both see the real caller.
+  `role` may be `dpwh_personnel`, `auditor` or `public_viewer`; promoting to administrator is not offered.
+  - Approve: `{ "role": "auditor", "is_approved": true, "is_active": true }`
+  - Reject: `{ "role": "public_viewer", "is_approved": false }` (clears the request)
+  - Deactivate / activate: `{ "is_active": false }` / `{ "is_active": true }`
+  - Administrators cannot demote or deactivate themselves (403).
 
 Responses are `{ "data": ... }` on success and `{ "error": "..." }` on failure. Validation errors also include an `errors` array.
 Unknown fields and computed fields (progress, flags, `is_published` …) are rejected with 400.

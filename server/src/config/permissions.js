@@ -42,6 +42,14 @@ export const PERMISSIONS = Object.freeze({
     write: [],
     delete: [],
   },
+  // User management (/api/users). RLS lets all staff read profiles, but listing
+  // accounts and changing access is an administrator task. Writes go only through
+  // the admin_set_user_access() RPC, which re-checks the administrator role itself.
+  profiles: {
+    read: [ROLES.ADMIN],
+    write: [ROLES.ADMIN],
+    delete: [],
+  },
 });
 
 /** Roles allowed to perform `action` ('read' | 'write' | 'delete') on `resource`. */

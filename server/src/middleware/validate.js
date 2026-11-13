@@ -80,6 +80,19 @@ export const agencySchema = {
   },
 };
 
+// PATCH /api/users/:id/access → admin_set_user_access(). Administrator is not an
+// assignable role here: promoting someone to administrator stays a manual task.
+export const ASSIGNABLE_ROLES = ['dpwh_personnel', 'auditor', 'public_viewer'];
+
+export const userAccessSchema = {
+  fields: {
+    role: { type: 'enum', values: ASSIGNABLE_ROLES },
+    is_approved: { type: 'boolean' },
+    is_active: { type: 'boolean' },
+    agency_id: { type: 'uuid' },
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Value parsing. Returns { value } or { error }. Empty strings become null so
 // HTML forms can clear optional fields.
