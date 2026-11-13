@@ -1,5 +1,19 @@
 // Maps Postgres / Supabase (PostgREST) errors to clear JSON responses.
 
+// Friendly messages for known constraints (names from database/migrations).
+const CONSTRAINT_MESSAGES = {
+  projects_contract_within_budget: 'contract_amount must not exceed approved_budget',
+  projects_dates_order: 'target_completion_date must be on or after notice_to_proceed',
+  projects_latitude_check: 'latitude must be between 12.10 and 13.95 (Occidental Mindoro)',
+  projects_longitude_check: 'longitude must be between 119.95 and 121.20 (Occidental Mindoro)',
+  projects_barangay_in_municipality: 'The barangay does not belong to the selected municipality',
+};
+
+function constraintMessage(message) {
+  const name = Object.keys(CONSTRAINT_MESSAGES).find((key) => message.includes(`"${key}"`));
+  return name ? CONSTRAINT_MESSAGES[name] : null;
+}
+
 function mapDbError(err) {
   const code = err.code;
   const message = err.message || '';
@@ -11,11 +25,17 @@ function mapDbError(err) {
     case '23505': // unique_violation
       return { status: 409, error: 'Record already exists' };
     case '23503': // foreign_key_violation
-      return { status: 400, error: 'Invalid reference: a linked record does not exist' };
+      if (/update or delete on table/i.test(message)) {
+        return { status: 409, error: 'Cannot delete: this record is still used by other records' };
+      }
+      return {
+        status: 400,
+        error: constraintMessage(message) || 'Invalid reference: a linked record does not exist',
+      };
     case '23514': // check_violation
     case '22P02': // invalid_text_representation (bad uuid / enum / number)
     case '22023': // invalid_parameter_value (raised by RPCs)
-      return { status: 400, error: message || 'Invalid value' };
+      return { status: 400, error: constraintMessage(message) || message || 'Invalid value' };
     case 'P0002': // no_data_found
     case 'PGRST116': // .single() returned no rows
       return { status: 404, error: 'Record not found' };
