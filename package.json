@@ -1,0 +1,16 @@
+{
+  "name": "dpwh-360-ipmats",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  }
+}
