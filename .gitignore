@@ -1,3 +1,4 @@
+
 # Dependencies
 node_modules/
 
@@ -6,7 +7,7 @@ dist/
 build/
 coverage/
 
-# Environment files: real keys stay local; only the .env.example templates are committed
+# Environment files
 .env
 .env.*
 !.env.example
@@ -21,13 +22,13 @@ coverage/
 supabase/.temp/
 supabase/.branches/
 
-# Claude Code personal (non-shared) settings
-CLAUDE.local.md
-.claude/settings.local.json
-
-# Skills installer working copy (npx skills). The shared copy of each skill is
-# committed under .claude/skills/, which is the folder Claude Code reads.
-.agents/
+# Claude Code - Local Only
+/CLAUDE.md
+/CLAUDE.local.md
+/.claude/
+/.agents/
+/agents/
+/skills-lock.json
 
 # Logs and OS files
 *.log
